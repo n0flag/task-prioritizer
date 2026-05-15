@@ -6,8 +6,6 @@ A personal task management app that helps you figure out **what to work on next*
 
 ## Screenshots
 
-> To add screenshots: run the app, take a screenshot of each view, save the files into a `screenshots/` folder in this project, and name them as shown below.
-
 **Kanban Board** — drag and drop tasks across columns
 ![Kanban Board](screenshots/kanban.png)
 

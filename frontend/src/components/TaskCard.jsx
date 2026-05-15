@@ -93,7 +93,7 @@ export default function TaskCard({ task, onEdit, isDragging = false }) {
           <Target size={10} className="text-blue-400" />
           {task.importance}
         </span>
-        {task.due_date && (() => {
+        {task.due_date && task.status !== "completed" && (() => {
           const due = formatDueDate(task.due_date);
           return (
             <span className={`flex items-center gap-0.5 ${due.cls}`}>
