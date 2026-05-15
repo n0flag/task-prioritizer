@@ -50,6 +50,8 @@ export default function TaskModal({ task, onClose }) {
   const isNew = !task.id;
   const { data: allTags = [] } = useTags();
   const { data: allTasks = [] } = useTasks(null, false);
+  const liveTask = !isNew ? allTasks.find((t) => t.id === task.id) : null;
+  const subtasks = liveTask?.subtasks ?? task.subtasks ?? [];
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const setDeps = useSetDependencies();
@@ -89,8 +91,7 @@ export default function TaskModal({ task, onClose }) {
     );
   }
 
-  async function handleAddSubtask(e) {
-    e.preventDefault();
+  async function handleAddSubtask() {
     if (!newSubtaskTitle.trim()) return;
     await subtaskMutations.add.mutateAsync({ title: newSubtaskTitle.trim() });
     setNewSubtaskTitle("");
@@ -263,9 +264,9 @@ export default function TaskModal({ task, onClose }) {
             {!isNew && (
               <div>
                 <label className="block text-sm text-gray-400 mb-2">Subtasks</label>
-                {task.subtasks && task.subtasks.length > 0 && (
+                {subtasks.length > 0 && (
                   <div className="space-y-1 mb-2">
-                    {task.subtasks.map((sub) => (
+                    {subtasks.map((sub) => (
                       <div key={sub.id} className="flex items-center gap-2 py-1 group">
                         <input
                           type="checkbox"
@@ -289,22 +290,24 @@ export default function TaskModal({ task, onClose }) {
                     ))}
                   </div>
                 )}
-                <form onSubmit={handleAddSubtask} className="flex gap-2">
+                <div className="flex gap-2">
                   <input
                     ref={subtaskInputRef}
                     value={newSubtaskTitle}
                     onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddSubtask(); } }}
                     placeholder="Add a subtask…"
                     className="flex-1 bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-indigo-500"
                   />
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={handleAddSubtask}
                     disabled={!newSubtaskTitle.trim() || subtaskMutations.add.isPending}
                     className="px-3 py-1.5 text-xs rounded bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 transition-colors"
                   >
                     Add
                   </button>
-                </form>
+                </div>
               </div>
             )}
 
