@@ -1,0 +1,13 @@
+data/
+frontend/node_modules/
+frontend/dist/
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.db
+*.db-wal
+*.db-shm
+.claude/
+.DS_Store
+Thumbs.db
