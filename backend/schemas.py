@@ -4,6 +4,12 @@ from typing import Optional, List
 from pydantic import BaseModel, Field, model_validator
 from models import StatusEnum
 
+# Alias avoids Pydantic v2 mis-resolving annotations when a field's name
+# matches the imported type name (e.g. field `date: date`). With
+# `from __future__ import annotations`, the string "date" in "Optional[date]"
+# could resolve to the field descriptor instead of datetime.date.
+PyDate = date
+
 
 # --- Tag ---
 
@@ -157,7 +163,7 @@ class TimeEntryBase(BaseModel):
     project_id: Optional[int] = None
     task_id: Optional[int] = None
     description: str = ""
-    date: date
+    date: PyDate
     start_time: Optional[str] = None   # "HH:MM"
     end_time: Optional[str] = None     # "HH:MM"
     duration_minutes: int = Field(..., ge=1)
@@ -169,7 +175,7 @@ class TimeEntryUpdate(BaseModel):
     project_id: Optional[int] = None
     task_id: Optional[int] = None
     description: Optional[str] = None
-    date: Optional[date] = None
+    date: Optional[PyDate] = None
     start_time: Optional[str] = None
     end_time: Optional[str] = None
     duration_minutes: Optional[int] = Field(None, ge=1)
@@ -179,7 +185,7 @@ class TimeEntryOut(BaseModel):
     project_id: Optional[int]
     task_id: Optional[int]
     description: str
-    date: date
+    date: PyDate
     start_time: Optional[str]
     end_time: Optional[str]
     duration_minutes: int

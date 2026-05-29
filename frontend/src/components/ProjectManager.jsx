@@ -38,7 +38,8 @@ export default function ProjectManager({ onClose }) {
       await add.mutateAsync({ name: name.trim(), color: nextColor });
       setName("");
     } catch (err) {
-      setError(err?.response?.data?.detail || "Failed to create project.");
+      const d = err?.response?.data?.detail;
+      setError(typeof d === "string" ? d : "Failed to create project.");
     }
   }
 
@@ -52,7 +53,8 @@ export default function ProjectManager({ onClose }) {
     try {
       await update.mutateAsync({ id, data });
     } catch (err) {
-      setError(err?.response?.data?.detail || "Failed to update project.");
+      const d = err?.response?.data?.detail;
+      setError(typeof d === "string" ? d : "Failed to update project.");
     }
   }
 

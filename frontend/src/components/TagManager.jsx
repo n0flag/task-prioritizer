@@ -23,7 +23,8 @@ export default function TagManager({ onClose }) {
       await createTag.mutateAsync({ name: name.trim(), color });
       setName("");
     } catch (err) {
-      setError(err?.response?.data?.detail || "Failed to create tag.");
+      const d = err?.response?.data?.detail;
+      setError(typeof d === "string" ? d : "Failed to create tag.");
     }
   }
 
@@ -37,7 +38,8 @@ export default function TagManager({ onClose }) {
     try {
       await updateTag.mutateAsync({ id, data });
     } catch (err) {
-      setError(err?.response?.data?.detail || "Failed to rename tag.");
+      const d = err?.response?.data?.detail;
+      setError(typeof d === "string" ? d : "Failed to rename tag.");
     }
   }
 

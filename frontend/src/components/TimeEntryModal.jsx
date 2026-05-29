@@ -52,6 +52,11 @@ export default function TimeEntryModal({ entry, projects, tasks, defaultDate, on
     e.preventDefault();
     setError("");
 
+    if (!form.date) {
+      setError("Date is required.");
+      return;
+    }
+
     const duration_minutes = computeDuration();
     if (!duration_minutes || duration_minutes < 1) {
       setError(
@@ -80,7 +85,8 @@ export default function TimeEntryModal({ entry, projects, tasks, defaultDate, on
       }
       onClose();
     } catch (err) {
-      setError(err?.response?.data?.detail || "Failed to save entry.");
+      const detail = err?.response?.data?.detail;
+      setError(typeof detail === "string" ? detail : "Failed to save entry.");
     }
   }
 

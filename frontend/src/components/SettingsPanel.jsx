@@ -29,7 +29,8 @@ export default function SettingsPanel({ onClose }) {
       });
       onClose();
     } catch (err) {
-      setError(err?.response?.data?.detail || "Failed to save settings.");
+      const d = err?.response?.data?.detail;
+      setError(typeof d === "string" ? d : "Failed to save settings.");
     }
   }
 

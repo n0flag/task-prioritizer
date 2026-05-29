@@ -113,7 +113,8 @@ export default function TaskModal({ task, onClose }) {
       }
       onClose();
     } catch (err) {
-      setError(err?.response?.data?.detail || "An error occurred.");
+      const d = err?.response?.data?.detail;
+      setError(typeof d === "string" ? d : "An error occurred.");
     }
   }
 
