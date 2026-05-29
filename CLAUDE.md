@@ -32,12 +32,12 @@ To enable the FastAPI interactive docs (disabled in production), set `SHOW_DOCS=
 Browser → nginx (:3000) → serves `/` as SPA static files, proxies `/api/*` → FastAPI backend (:8000) → SQLite via SQLAlchemy.
 
 ### Backend (`backend/`)
-- **FastAPI** app with five routers: `tasks`, `subtasks`, `tags`, `settings`, `stats`
+- **FastAPI** app with seven routers: `tasks`, `subtasks`, `tags`, `settings`, `stats`, `time_entries`, `projects`
 - **SQLite** database at `/data/tasks.db` (volume-mounted). Schema migrations are applied as raw SQL strings in the `MIGRATIONS` list in `main.py` inside the `lifespan` handler, before `Base.metadata.create_all()`. Add new migrations there — they are wrapped in try/except so they are safe to re-run.
 - **`scoring.py`** is the single source of truth for the priority score: `base = urgency * w + importance * (1-w)`, plus a due-date bonus (0–3) and an age bonus (0–3, +0.5/week). Both `tasks.py` and `stats.py` call this directly.
 - **`_enrich()`** in `routers/tasks.py` wraps every `Task` ORM object into a `TaskOut` schema, injecting `score`, `age_bonus`, `blocked_by_ids`, and `is_blocked`. All read endpoints pass through this function.
 - **Settings** are a singleton row (`id=1`) in the `settings` table, storing `urgency_weight`, `importance_weight`, and `auto_archive_days`. Retrieved with `db.get(Settings, 1)` throughout.
-- Fixed-path routes (`/recommend`, `/archive-completed`) are declared **before** `/{task_id}` in `tasks.py` to avoid routing conflicts — this ordering must be preserved.
+- Fixed-path routes (`/recommend`, `/archive-completed` in `tasks.py`; `/report`, `/export` in `time_entries.py`) are declared **before** `/{id}` parameterised routes to avoid routing conflicts — this ordering must be preserved.
 
 ### Frontend (`frontend/src/`)
 - **No client-side router.** View state (`kanban` / `focus` / `matrix`) and all modal visibility are plain `useState` in `App.jsx`.
