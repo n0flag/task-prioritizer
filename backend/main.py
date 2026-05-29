@@ -6,7 +6,7 @@ from sqlalchemy import text
 
 from database import engine, Base, SessionLocal
 from models import Settings
-from routers import tasks, tags, settings as settings_router, subtasks, stats
+from routers import tasks, tags, settings as settings_router, subtasks, stats, projects, time_entries
 
 _show_docs = os.getenv("SHOW_DOCS", "false").lower() == "true"
 
@@ -69,7 +69,9 @@ app.include_router(tasks.router,            prefix="/api/tasks",    tags=["tasks
 app.include_router(subtasks.router,         prefix="/api/tasks",    tags=["subtasks"])
 app.include_router(tags.router,             prefix="/api/tags",     tags=["tags"])
 app.include_router(settings_router.router,  prefix="/api/settings", tags=["settings"])
-app.include_router(stats.router,            prefix="/api/stats",    tags=["stats"])
+app.include_router(stats.router,            prefix="/api/stats",         tags=["stats"])
+app.include_router(projects.router,         prefix="/api/projects",      tags=["projects"])
+app.include_router(time_entries.router,     prefix="/api/time-entries",  tags=["time-entries"])
 
 
 @app.get("/health")

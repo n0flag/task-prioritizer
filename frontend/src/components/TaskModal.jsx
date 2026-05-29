@@ -57,6 +57,7 @@ export default function TaskModal({ task, onClose }) {
   const setDeps = useSetDependencies();
   const subtaskMutations = useSubtaskMutations(task.id);
 
+  const [activeTab, setActiveTab] = useState("details");
   const [form, setForm] = useState({
     title: task.title || "",
     description: task.description || "",
@@ -108,7 +109,6 @@ export default function TaskModal({ task, onClose }) {
         await createTask.mutateAsync(taskPayload);
       } else {
         await updateTask.mutateAsync({ id: task.id, data: taskPayload });
-        // Update dependencies separately
         await setDeps.mutateAsync({ id: task.id, depends_on_ids });
       }
       onClose();
@@ -120,154 +120,170 @@ export default function TaskModal({ task, onClose }) {
   const isPending = createTask.isPending || updateTask.isPending;
   const otherTasks = allTasks.filter((t) => t.id !== task.id && !t.archived);
 
+  const doneSubs = subtasks.filter((s) => s.completed).length;
+  const totalSubs = subtasks.length;
+
+  const tabs = isNew ? [] : [
+    { key: "details",  label: "Details" },
+    { key: "subtasks", label: totalSubs > 0 ? `Subtasks (${doneSubs}/${totalSubs})` : "Subtasks" },
+    { key: "activity", label: "Activity" },
+  ];
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-gray-900 rounded-xl border border-gray-700 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <h2 className="text-lg font-bold mb-4">{isNew ? "New Task" : "Edit Task"}</h2>
+      <div className="bg-gray-900 rounded-xl border border-gray-700 w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
 
+        {/* Header */}
+        <div className="px-6 pt-5 pb-0 shrink-0">
+          <h2 className="text-lg font-bold mb-3">{isNew ? "New Task" : "Edit Task"}</h2>
+
+          {/* Tab bar — only for existing tasks */}
+          {!isNew && (
+            <div className="flex border-b border-gray-800 -mx-6 px-6">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`px-4 py-2 text-sm border-b-2 -mb-px transition-colors ${
+                    activeTab === tab.key
+                      ? "border-indigo-500 text-white font-medium"
+                      : "border-transparent text-gray-500 hover:text-gray-300"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 min-h-0">
           {error && (
             <div className="mb-4 px-3 py-2 bg-red-900/50 border border-red-700 rounded text-sm text-red-300">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">
-                Title <span className="text-red-400">*</span>
-              </label>
-              <input
-                value={form.title}
-                onChange={(e) => set("title", e.target.value)}
-                required
-                maxLength={255}
-                placeholder="What needs to be done?"
-                className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
-              />
-            </div>
+          <form id="task-form" onSubmit={handleSubmit} className="space-y-4">
 
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">Notes</label>
-              <textarea
-                value={form.description}
-                onChange={(e) => set("description", e.target.value)}
-                rows={3}
-                placeholder="Additional context…"
-                className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors resize-none"
-              />
-            </div>
-
-            <div>
-              <label className="flex justify-between text-sm text-gray-400 mb-1">
-                <span>Urgency <span className="text-gray-600 font-normal">(how time-sensitive?)</span></span>
-                <span className="font-bold text-white">{form.urgency} / 10</span>
-              </label>
-              <input
-                type="range" min="1" max="10" value={form.urgency}
-                onChange={(e) => set("urgency", parseInt(e.target.value))}
-                className="w-full accent-indigo-500"
-              />
-              <ScoreGuide value={form.urgency} guide={URGENCY_GUIDE} />
-            </div>
-
-            <div>
-              <label className="flex justify-between text-sm text-gray-400 mb-1">
-                <span>Importance / Impact <span className="text-gray-600 font-normal">(how much does it matter?)</span></span>
-                <span className="font-bold text-white">{form.importance} / 10</span>
-              </label>
-              <input
-                type="range" min="1" max="10" value={form.importance}
-                onChange={(e) => set("importance", parseInt(e.target.value))}
-                className="w-full accent-indigo-500"
-              />
-              <ScoreGuide value={form.importance} guide={IMPORTANCE_GUIDE} />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Status</label>
-                <select
-                  value={form.status}
-                  onChange={(e) => set("status", e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none"
-                >
-                  <option value="backlog">Backlog</option>
-                  <option value="ready">Ready</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Due Date</label>
-                <input
-                  type="date" value={form.due_date}
-                  onChange={(e) => set("due_date", e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none"
-                />
-              </div>
-            </div>
-
-            {allTags.length > 0 && (
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">Tags</label>
-                <div className="flex flex-wrap gap-2">
-                  {allTags.map((tag) => {
-                    const selected = form.tag_ids.includes(tag.id);
-                    return (
-                      <button
-                        type="button" key={tag.id} onClick={() => toggleTag(tag.id)}
-                        style={{
-                          borderColor: tag.color,
-                          backgroundColor: selected ? tag.color : "transparent",
-                          color: selected ? "#fff" : tag.color,
-                        }}
-                        className="px-2.5 py-1 text-xs rounded border transition-colors"
-                      >
-                        {tag.name}
-                      </button>
-                    );
-                  })}
+            {/* ── DETAILS TAB (or full form for new tasks) ── */}
+            {(isNew || activeTab === "details") && (
+              <>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">
+                    Title <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    value={form.title}
+                    onChange={(e) => set("title", e.target.value)}
+                    required
+                    maxLength={255}
+                    placeholder="What needs to be done?"
+                    autoFocus={isNew}
+                    className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+                  />
                 </div>
-              </div>
+
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Notes</label>
+                  <textarea
+                    value={form.description}
+                    onChange={(e) => set("description", e.target.value)}
+                    rows={3}
+                    placeholder="Additional context…"
+                    className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="flex justify-between text-sm text-gray-400 mb-1">
+                    <span>Urgency <span className="text-gray-600 font-normal">(how time-sensitive?)</span></span>
+                    <span className="font-bold text-white">{form.urgency} / 10</span>
+                  </label>
+                  <input
+                    type="range" min="1" max="10" value={form.urgency}
+                    onChange={(e) => set("urgency", parseInt(e.target.value))}
+                    className="w-full accent-indigo-500"
+                  />
+                  <ScoreGuide value={form.urgency} guide={URGENCY_GUIDE} />
+                </div>
+
+                <div>
+                  <label className="flex justify-between text-sm text-gray-400 mb-1">
+                    <span>Importance <span className="text-gray-600 font-normal">(how much does it matter?)</span></span>
+                    <span className="font-bold text-white">{form.importance} / 10</span>
+                  </label>
+                  <input
+                    type="range" min="1" max="10" value={form.importance}
+                    onChange={(e) => set("importance", parseInt(e.target.value))}
+                    className="w-full accent-indigo-500"
+                  />
+                  <ScoreGuide value={form.importance} guide={IMPORTANCE_GUIDE} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Status</label>
+                    <select
+                      value={form.status}
+                      onChange={(e) => set("status", e.target.value)}
+                      className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none"
+                    >
+                      <option value="backlog">Backlog</option>
+                      <option value="ready">Ready</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="completed">Completed</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Due Date</label>
+                    <input
+                      type="date" value={form.due_date}
+                      onChange={(e) => set("due_date", e.target.value)}
+                      className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {allTags.length > 0 && (
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Tags</label>
+                    <div className="flex flex-wrap gap-2">
+                      {allTags.map((tag) => {
+                        const selected = form.tag_ids.includes(tag.id);
+                        return (
+                          <button
+                            type="button" key={tag.id} onClick={() => toggleTag(tag.id)}
+                            style={{
+                              borderColor: tag.color,
+                              backgroundColor: selected ? tag.color : "transparent",
+                              color: selected ? "#fff" : tag.color,
+                            }}
+                            className="px-2.5 py-1 text-xs rounded border transition-colors"
+                          >
+                            {tag.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
-            {!isNew && otherTasks.length > 0 && (
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">
-                  Blocked by <span className="text-gray-600 font-normal">(this task can&apos;t start until these are done)</span>
-                </label>
-                <div className="max-h-32 overflow-y-auto space-y-1 bg-gray-800 rounded-lg p-2 border border-gray-700">
-                  {otherTasks.map((t) => (
-                    <label key={t.id} className="flex items-center gap-2 text-xs cursor-pointer py-0.5">
-                      <input
-                        type="checkbox"
-                        checked={form.depends_on_ids.includes(t.id)}
-                        onChange={() => toggleDep(t.id)}
-                        className="accent-indigo-500"
-                      />
-                      <span className={t.status === "completed" ? "line-through text-gray-500" : ""}>
-                        {t.title}
-                      </span>
-                      {t.status === "completed" && (
-                        <span className="text-emerald-600 text-[10px]">✓</span>
-                      )}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {!isNew && (
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">Subtasks</label>
-                {subtasks.length > 0 && (
-                  <div className="space-y-1 mb-2">
+            {/* ── SUBTASKS TAB ── */}
+            {!isNew && activeTab === "subtasks" && (
+              <>
+                {/* Subtask list */}
+                {subtasks.length > 0 ? (
+                  <div className="space-y-1 mb-3">
                     {subtasks.map((sub) => (
-                      <div key={sub.id} className="flex items-center gap-2 py-1 group">
+                      <div key={sub.id} className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gray-800/60 group">
                         <input
                           type="checkbox"
                           checked={sub.completed}
@@ -282,14 +298,29 @@ export default function TaskModal({ task, onClose }) {
                         <button
                           type="button"
                           onClick={() => subtaskMutations.remove.mutate(sub.id)}
-                          className="text-xs text-gray-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                          className="text-xs text-gray-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 px-1"
                         >
                           ✕
                         </button>
                       </div>
                     ))}
+                    {totalSubs > 0 && (
+                      <div className="pt-1">
+                        <div className="h-1 bg-gray-700 rounded-full overflow-hidden">
+                          <div
+                            className="h-1 bg-indigo-500 rounded-full transition-all"
+                            style={{ width: `${(doneSubs / totalSubs) * 100}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1">{doneSubs} of {totalSubs} complete</p>
+                      </div>
+                    )}
                   </div>
+                ) : (
+                  <p className="text-sm text-gray-600 mb-3">No subtasks yet.</p>
                 )}
+
+                {/* Add subtask */}
                 <div className="flex gap-2">
                   <input
                     ref={subtaskInputRef}
@@ -297,38 +328,87 @@ export default function TaskModal({ task, onClose }) {
                     onChange={(e) => setNewSubtaskTitle(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddSubtask(); } }}
                     placeholder="Add a subtask…"
-                    className="flex-1 bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-indigo-500"
+                    className="flex-1 bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-500"
                   />
                   <button
                     type="button"
                     onClick={handleAddSubtask}
                     disabled={!newSubtaskTitle.trim() || subtaskMutations.add.isPending}
-                    className="px-3 py-1.5 text-xs rounded bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 transition-colors"
+                    className="px-3 py-1.5 text-sm rounded bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 transition-colors"
                   >
                     Add
                   </button>
                 </div>
-              </div>
+
+                {/* Dependencies */}
+                {otherTasks.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-gray-800">
+                    <label className="block text-sm text-gray-400 mb-2">
+                      Blocked by
+                      <span className="text-gray-600 font-normal text-xs ml-1">(can't start until these are done)</span>
+                    </label>
+                    <div className="max-h-40 overflow-y-auto space-y-1 bg-gray-800 rounded-lg p-2 border border-gray-700">
+                      {otherTasks.map((t) => (
+                        <label key={t.id} className="flex items-center gap-2 text-xs cursor-pointer py-0.5 hover:bg-gray-700/40 px-1 rounded">
+                          <input
+                            type="checkbox"
+                            checked={form.depends_on_ids.includes(t.id)}
+                            onChange={() => toggleDep(t.id)}
+                            className="accent-indigo-500"
+                          />
+                          <span className={t.status === "completed" ? "line-through text-gray-500" : ""}>
+                            {t.title}
+                          </span>
+                          {t.status === "completed" && (
+                            <span className="text-emerald-600 text-[10px]">✓</span>
+                          )}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
-            <div className="flex justify-end gap-3 pt-2 border-t border-gray-800">
+            {/* ── ACTIVITY TAB ── */}
+            {!isNew && activeTab === "activity" && (
+              <ActivityTimeline taskId={task.id} standalone />
+            )}
+
+          </form>
+        </div>
+
+        {/* Footer — always visible, submit only relevant on details/new */}
+        {activeTab !== "activity" && (
+          <div className="px-6 py-4 border-t border-gray-800 shrink-0 flex justify-end gap-3">
+            <button
+              type="button" onClick={onClose}
+              className="px-4 py-2 text-sm rounded bg-gray-700 hover:bg-gray-600 transition-colors"
+            >
+              {activeTab === "subtasks" ? "Close" : "Cancel"}
+            </button>
+            {(isNew || activeTab === "details") && (
               <button
-                type="button" onClick={onClose}
-                className="px-4 py-2 text-sm rounded bg-gray-700 hover:bg-gray-600 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit" disabled={isPending}
+                type="submit"
+                form="task-form"
+                disabled={isPending}
                 className="px-4 py-2 text-sm rounded bg-indigo-600 hover:bg-indigo-500 font-medium transition-colors disabled:opacity-50"
               >
                 {isPending ? "Saving…" : isNew ? "Create Task" : "Save Changes"}
               </button>
-            </div>
-          </form>
-
-          {!isNew && <ActivityTimeline taskId={task.id} />}
-        </div>
+            )}
+          </div>
+        )}
+        {activeTab === "activity" && (
+          <div className="px-6 py-4 border-t border-gray-800 shrink-0 flex justify-end">
+            <button
+              type="button" onClick={onClose}
+              className="px-4 py-2 text-sm rounded bg-gray-700 hover:bg-gray-600 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,24 +1,27 @@
 import React, { useState } from "react";
 import {
   BarChart2, Tag, SlidersHorizontal, Plus,
-  ArrowUpDown, Archive, LayoutDashboard, Crosshair, LayoutGrid,
+  ArrowUpDown, Archive, LayoutDashboard, Crosshair, LayoutGrid, Clock, FolderOpen,
 } from "lucide-react";
 import RecommendationBanner from "./components/RecommendationBanner.jsx";
 import KanbanBoard from "./components/KanbanBoard.jsx";
 import FocusView from "./components/FocusView.jsx";
 import MatrixView from "./components/MatrixView.jsx";
+import TimesheetView from "./components/TimesheetView.jsx";
 import StatsPanel from "./components/StatsPanel.jsx";
 import SettingsPanel from "./components/SettingsPanel.jsx";
 import TagManager from "./components/TagManager.jsx";
+import ProjectManager from "./components/ProjectManager.jsx";
 import TaskModal from "./components/TaskModal.jsx";
 import { useTags } from "./hooks/useTasks.js";
 
-const VIEWS = ["kanban", "focus", "matrix"];
+const VIEWS = ["kanban", "focus", "matrix", "timesheet"];
 
 const VIEW_META = {
-  kanban: { label: "Kanban", Icon: LayoutDashboard },
-  focus:  { label: "Focus",  Icon: Crosshair },
-  matrix: { label: "Matrix", Icon: LayoutGrid },
+  kanban:    { label: "Kanban",    Icon: LayoutDashboard },
+  focus:     { label: "Focus",     Icon: Crosshair },
+  matrix:    { label: "Matrix",    Icon: LayoutGrid },
+  timesheet: { label: "Timesheet", Icon: Clock },
 };
 
 export default function App() {
@@ -28,6 +31,7 @@ export default function App() {
   const [showSettings, setShowSettings]   = useState(false);
   const [showTagManager, setShowTagManager] = useState(false);
   const [showStats, setShowStats]         = useState(false);
+  const [showProjects, setShowProjects]   = useState(false);
   const [showArchived, setShowArchived]   = useState(false);
   const [searchQuery, setSearchQuery]     = useState("");
   const [sortByScore, setSortByScore]     = useState(false);
@@ -81,6 +85,13 @@ export default function App() {
               <span className="hidden md:inline">Stats</span>
             </button>
             <button
+              onClick={() => setShowProjects(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors"
+            >
+              <FolderOpen size={14} />
+              <span className="hidden md:inline">Projects</span>
+            </button>
+            <button
               onClick={() => setShowTagManager(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors"
             >
@@ -92,15 +103,17 @@ export default function App() {
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors"
             >
               <SlidersHorizontal size={14} />
-              <span className="hidden md:inline">Scoring</span>
+              <span className="hidden md:inline">Settings</span>
             </button>
-            <button
-              onClick={() => setModalTask({})}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-500 font-medium transition-colors"
-            >
-              <Plus size={14} />
-              <span>New</span>
-            </button>
+            {view !== "timesheet" && (
+              <button
+                onClick={() => setModalTask({})}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-500 font-medium transition-colors"
+              >
+                <Plus size={14} />
+                <span>New</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -161,6 +174,7 @@ export default function App() {
             searchQuery={searchQuery}
           />
         )}
+        {view === "timesheet" && <TimesheetView />}
       </main>
 
       <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 flex">
@@ -186,7 +200,8 @@ export default function App() {
       )}
       {showSettings    && <SettingsPanel onClose={() => setShowSettings(false)} />}
       {showTagManager  && <TagManager    onClose={() => setShowTagManager(false)} />}
-      {showStats       && <StatsPanel    onClose={() => setShowStats(false)} />}
+      {showStats       && <StatsPanel       onClose={() => setShowStats(false)} />}
+      {showProjects    && <ProjectManager   onClose={() => setShowProjects(false)} />}
     </div>
   );
 }

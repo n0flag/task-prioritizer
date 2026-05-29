@@ -4,7 +4,7 @@ import {
   createTask, updateTask, patchTaskStatus, deleteTask,
   archiveCompleted, setDependencies, fetchActivity,
   createSubtask, updateSubtask, deleteSubtask,
-  createTag, deleteTag, updateSettings,
+  createTag, updateTag, deleteTag, updateSettings,
 } from "../api/client.js";
 
 export const KEYS = {
@@ -125,6 +125,17 @@ export function useCreateTag() {
   return useMutation({
     mutationFn: createTag,
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.tags }),
+  });
+}
+
+export function useUpdateTag() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }) => updateTag(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.tags });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+    },
   });
 }
 

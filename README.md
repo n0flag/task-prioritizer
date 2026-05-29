@@ -4,39 +4,22 @@ A personal task management app that helps you figure out **what to work on next*
 
 ---
 
-## Screenshots
-
-**Kanban Board** — drag and drop tasks across columns
-![Kanban Board](screenshots/kanban.png)
-
-**Focus View** — your top 3 highest-priority tasks front and centre
-![Focus View](screenshots/focus.png)
-
-**Eisenhower Matrix** — tasks plotted by urgency vs. importance
-![Matrix View](screenshots/matrix.png)
-
-**Task Editor** — set urgency, importance, due date, subtasks, and dependencies
-![Task Modal](screenshots/task-modal.png)
-
-**Stats Dashboard** — track your completion history
-![Stats Panel](screenshots/stats.png)
-
----
-
 ## Features
 
 - **Smart scoring** — each task is scored from 1–10 using urgency, importance, due dates, and how long the task has been sitting unfinished. The score updates automatically.
-- **Recommended focus** — a banner at the top always highlights the single highest-priority task you should work on right now.
+- **Recommended focus** — a banner at the top always highlights the single highest-priority task you should work on right now, with a one-click Start button.
 - **Kanban board** — drag and drop tasks across four columns: Backlog, Ready, In Progress, and Completed.
 - **Focus view** — shows your top 3 highest-priority unblocked tasks as large cards, so you can start without thinking.
 - **Eisenhower Matrix** — plots all your tasks visually by urgency vs. importance across four quadrants (Do Now, Schedule, Delegate, Eliminate).
+- **Timesheet** — log time against projects with weekly, monthly, and yearly views. Export to CSV.
 - **Subtasks** — break any task into smaller steps with a progress bar.
-- **Tags** — colour-coded labels to organise tasks by project, area, or anything you like.
+- **Tags** — colour-coded labels to organise tasks by area or context.
+- **Projects** — group time entries by project with auto-assigned contrasting colours.
 - **Dependencies** — mark tasks as "blocked by" other tasks so blocked work is clearly flagged.
 - **Activity log** — every change to a task (status, urgency, importance) is recorded with a timestamp.
 - **Auto-archive** — completed tasks are automatically archived after a configurable number of days to keep your board clean.
 - **Stats dashboard** — see how many tasks you've completed, their average priority score, and a day-by-day completion chart for the last 30 days.
-- **Adjustable scoring weights** — tune how much urgency vs. importance matters to you from the Scoring panel.
+- **Adjustable scoring weights** — tune how much urgency vs. importance matters to you from the Settings panel.
 
 ---
 
@@ -48,7 +31,7 @@ Score = (Urgency × urgency_weight) + (Importance × importance_weight)
       + age_bonus (0–3 points, grows +0.5 per week the task sits unfinished)
 ```
 
-By default urgency and importance are weighted equally (50/50). You can change this in the **Scoring** panel.
+By default urgency and importance are weighted equally (50/50). You can change this in the **Settings** panel.
 
 ---
 
@@ -163,6 +146,9 @@ Make sure Docker Desktop is running (green status in the Docker app) before runn
 
 **The port 3000 is already in use.**
 Another app on your computer is using that port. You can change it by opening `docker-compose.yml` in a text editor and changing `"3000:80"` to another number like `"3001:80"`, then access the app at `http://localhost:3001`.
+
+**Docker can't connect to Docker Hub when building.**
+Open Docker Desktop → Settings → Docker Engine, add `"dns": ["8.8.8.8", "1.1.1.1"]` to the JSON config, then click Apply & Restart.
 
 ---
 

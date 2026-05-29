@@ -57,33 +57,58 @@ export default function TaskCard({ task, onEdit, isDragging = false }) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`rounded-lg p-3 border transition-colors select-none ${
+      className={`rounded-lg p-3 border transition-all select-none group ${
         task.archived
           ? "bg-gray-800/50 border-gray-800 opacity-60"
-          : "bg-gray-800 border-gray-700 hover:border-gray-500"
+          : "bg-gray-800 border-gray-700 hover:border-gray-600 hover:shadow-md hover:shadow-black/30"
       } ${isDragging ? "shadow-2xl rotate-1 cursor-grabbing" : "cursor-grab"}`}
       {...attributes}
       {...listeners}
     >
-      <div className="flex items-start justify-between gap-2">
+      {/* Title + score + hover actions */}
+      <div className="flex items-start gap-2">
         <p className="font-medium text-sm leading-snug line-clamp-2 flex-1">
           {task.title}
         </p>
-        <div className="flex flex-col items-end gap-0.5 shrink-0">
-          <span className={`text-xs font-bold tabular-nums ${scoreColor}`}>
-            {task.score.toFixed(1)}
-          </span>
-          {task.age_bonus > 0 && (
-            <span
-              className="flex items-center gap-0.5 text-[10px] text-orange-400"
-              title={`+${task.age_bonus} urgency creep bonus`}
+        <div className="flex items-center gap-1 shrink-0">
+          {/* Action buttons — visible on hover only */}
+          <div
+            className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => onEdit(task)}
+              title="Edit"
+              className="p-1 rounded text-gray-500 hover:text-indigo-400 hover:bg-indigo-900/30 transition-colors"
             >
-              <Clock size={9} />+{task.age_bonus}
+              <Pencil size={11} />
+            </button>
+            <button
+              onClick={handleDelete}
+              title="Delete"
+              className="p-1 rounded text-gray-500 hover:text-red-400 hover:bg-red-900/20 transition-colors"
+            >
+              <Trash2 size={11} />
+            </button>
+          </div>
+          {/* Score */}
+          <div className="flex flex-col items-end gap-0.5 pl-0.5">
+            <span className={`text-xs font-bold tabular-nums ${scoreColor}`}>
+              {task.score.toFixed(1)}
             </span>
-          )}
+            {task.age_bonus > 0 && (
+              <span
+                className="flex items-center gap-0.5 text-[10px] text-orange-400"
+                title={`+${task.age_bonus} urgency creep bonus`}
+              >
+                <Clock size={9} />+{task.age_bonus}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Meta row */}
       <div className="flex flex-wrap gap-2.5 mt-1.5 text-[11px] text-gray-500">
         <span className="flex items-center gap-0.5">
           <Zap size={10} className="text-amber-500" />
@@ -107,12 +132,14 @@ export default function TaskCard({ task, onEdit, isDragging = false }) {
         )}
       </div>
 
+      {/* Blocked badge */}
       {task.is_blocked && (
         <div className="mt-1.5 inline-flex items-center gap-1 text-[10px] text-red-400 bg-red-900/30 border border-red-800/60 rounded px-1.5 py-0.5">
           <Ban size={10} /> Blocked
         </div>
       )}
 
+      {/* Tags */}
       {task.tags && task.tags.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-2">
           {task.tags.map((tag) => (
@@ -123,7 +150,7 @@ export default function TaskCard({ task, onEdit, isDragging = false }) {
                 color: tag.color,
                 borderColor: tag.color + "55",
               }}
-              className="text-[10px] px-1.5 py-0.5 rounded border"
+              className="text-[10px] px-1.5 py-0.5 rounded border font-medium"
             >
               {tag.name}
             </span>
@@ -131,13 +158,14 @@ export default function TaskCard({ task, onEdit, isDragging = false }) {
         </div>
       )}
 
+      {/* Subtask progress */}
       {totalSubs > 0 && (
         <div className="mt-2">
           <div className="flex justify-between text-[10px] text-gray-500 mb-0.5">
             <span>{doneSubs}/{totalSubs} subtasks</span>
             <span>{subPct}%</span>
           </div>
-          <div className="h-1 bg-gray-700 rounded-full">
+          <div className="h-1 bg-gray-700 rounded-full overflow-hidden">
             <div
               className="h-1 bg-indigo-500 rounded-full transition-all"
               style={{ width: `${subPct}%` }}
@@ -145,24 +173,6 @@ export default function TaskCard({ task, onEdit, isDragging = false }) {
           </div>
         </div>
       )}
-
-      <div
-        className="flex gap-1 mt-2 pt-2 border-t border-gray-700/60"
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={() => onEdit(task)}
-          className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 hover:bg-indigo-900/30 px-2 py-1 rounded transition-colors"
-        >
-          <Pencil size={11} /> Edit
-        </button>
-        <button
-          onClick={handleDelete}
-          className="flex items-center gap-1 text-xs text-gray-500 hover:text-red-400 hover:bg-red-900/20 px-2 py-1 rounded transition-colors ml-auto"
-        >
-          <Trash2 size={11} /> Delete
-        </button>
-      </div>
     </div>
   );
 }

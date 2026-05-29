@@ -105,3 +105,30 @@ class Settings(Base):
     urgency_weight = Column(Float, nullable=False, default=0.5)
     importance_weight = Column(Float, nullable=False, default=0.5)
     auto_archive_days = Column(Integer, nullable=False, default=7)
+
+
+class Project(Base):
+    __tablename__ = "projects"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False, unique=True)
+    color = Column(String(7), nullable=False, default="#6366f1")
+
+    time_entries = relationship("TimeEntry", back_populates="project", cascade="all, delete-orphan")
+
+
+class TimeEntry(Base):
+    __tablename__ = "time_entries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="SET NULL"), nullable=True)
+    task_id = Column(Integer, ForeignKey("tasks.id", ondelete="SET NULL"), nullable=True)
+    description = Column(String, nullable=False, default="")
+    date = Column(Date, nullable=False)
+    start_time = Column(String(5), nullable=True)   # "HH:MM"
+    end_time = Column(String(5), nullable=True)     # "HH:MM"
+    duration_minutes = Column(Integer, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    project = relationship("Project", back_populates="time_entries")
+    task = relationship("Task")

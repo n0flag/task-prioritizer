@@ -14,6 +14,10 @@ class TagBase(BaseModel):
 class TagCreate(TagBase):
     pass
 
+class TagUpdate(BaseModel):
+    name: Optional[str] = Field(None, max_length=50)
+    color: Optional[str] = Field(None, pattern=r"^#[0-9a-fA-F]{6}$")
+
 class TagOut(TagBase):
     id: int
     model_config = {"from_attributes": True}
@@ -127,6 +131,78 @@ class SettingsUpdate(BaseModel):
                 f"urgency_weight + importance_weight must equal 1.0, got {total}"
             )
         return self
+
+
+# --- Project ---
+
+class ProjectBase(BaseModel):
+    name: str = Field(..., max_length=100)
+    color: str = Field(default="#6366f1", pattern=r"^#[0-9a-fA-F]{6}$")
+
+class ProjectCreate(ProjectBase):
+    pass
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = Field(None, max_length=100)
+    color: Optional[str] = Field(None, pattern=r"^#[0-9a-fA-F]{6}$")
+
+class ProjectOut(ProjectBase):
+    id: int
+    model_config = {"from_attributes": True}
+
+
+# --- Time Entry ---
+
+class TimeEntryBase(BaseModel):
+    project_id: Optional[int] = None
+    task_id: Optional[int] = None
+    description: str = ""
+    date: date
+    start_time: Optional[str] = None   # "HH:MM"
+    end_time: Optional[str] = None     # "HH:MM"
+    duration_minutes: int = Field(..., ge=1)
+
+class TimeEntryCreate(TimeEntryBase):
+    pass
+
+class TimeEntryUpdate(BaseModel):
+    project_id: Optional[int] = None
+    task_id: Optional[int] = None
+    description: Optional[str] = None
+    date: Optional[date] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    duration_minutes: Optional[int] = Field(None, ge=1)
+
+class TimeEntryOut(BaseModel):
+    id: int
+    project_id: Optional[int]
+    task_id: Optional[int]
+    description: str
+    date: date
+    start_time: Optional[str]
+    end_time: Optional[str]
+    duration_minutes: int
+    project: Optional[ProjectOut] = None
+    task_title: Optional[str] = None
+    created_at: datetime
+    model_config = {"from_attributes": True}
+
+
+# --- Timesheet report ---
+
+class ProjectHours(BaseModel):
+    project_id: Optional[int]
+    project_name: str
+    project_color: str
+    total_minutes: int
+    entry_count: int
+
+class TimesheetReport(BaseModel):
+    date_from: date
+    date_to: date
+    total_minutes: int
+    by_project: List[ProjectHours]
 
 
 # --- Stats ---
