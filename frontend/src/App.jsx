@@ -84,20 +84,23 @@ export default function App() {
               <BarChart2 size={14} />
               <span className="hidden md:inline">Stats</span>
             </button>
-            <button
-              onClick={() => setShowProjects(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors"
-            >
-              <FolderOpen size={14} />
-              <span className="hidden md:inline">Projects</span>
-            </button>
-            <button
-              onClick={() => setShowTagManager(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors"
-            >
-              <Tag size={14} />
-              <span className="hidden md:inline">Tags</span>
-            </button>
+            {view === "timesheet" ? (
+              <button
+                onClick={() => setShowProjects(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors"
+              >
+                <FolderOpen size={14} />
+                <span className="hidden md:inline">Projects</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowTagManager(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors"
+              >
+                <Tag size={14} />
+                <span className="hidden md:inline">Tags</span>
+              </button>
+            )}
             <button
               onClick={() => setShowSettings(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors"
