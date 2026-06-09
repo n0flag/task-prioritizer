@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 const DURATION_MODE = "duration";
 const RANGE_MODE = "range";
@@ -10,6 +10,92 @@ function timeToMinutes(hhmm) {
 
 function minutesToHM(minutes) {
   return { hours: Math.floor(minutes / 60), mins: minutes % 60 };
+}
+
+function ProjectSearch({ projects, value, onChange }) {
+  const selected = projects.find((p) => p.id === value) ?? null;
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    function onMouseDown(e) {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+        setQuery("");
+      }
+    }
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, []);
+
+  const filtered = projects.filter((p) =>
+    p.name.toLowerCase().includes(query.toLowerCase())
+  );
+
+  function select(projectId) {
+    onChange(projectId);
+    setQuery("");
+    setOpen(false);
+  }
+
+  function handleInputChange(e) {
+    setQuery(e.target.value);
+    setOpen(true);
+    if (e.target.value === "") onChange(null);
+  }
+
+  const displayValue = open ? query : (selected?.name ?? "");
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className="relative">
+        {selected && !open && (
+          <span
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full pointer-events-none"
+            style={{ backgroundColor: selected.color }}
+          />
+        )}
+        <input
+          type="text"
+          value={displayValue}
+          onChange={handleInputChange}
+          onFocus={() => setOpen(true)}
+          placeholder="Search project…"
+          className={`w-full bg-gray-800 border border-gray-600 rounded py-2 pr-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors ${
+            selected && !open ? "pl-7" : "pl-3"
+          }`}
+        />
+      </div>
+      {open && (
+        <div className="absolute z-20 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-52 overflow-y-auto">
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); select(null); }}
+            className="w-full text-left px-3 py-2 text-sm text-gray-500 hover:bg-gray-700 transition-colors"
+          >
+            — No project —
+          </button>
+          {filtered.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); select(p.id); }}
+              className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2.5 transition-colors ${
+                value === p.id ? "bg-gray-700 text-white" : "hover:bg-gray-700 text-gray-200"
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+              {p.name}
+            </button>
+          ))}
+          {filtered.length === 0 && (
+            <p className="px-3 py-2 text-sm text-gray-500">No projects match</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function TimeEntryModal({ entry, projects, tasks, defaultDate, onClose, mutations }) {
@@ -24,7 +110,7 @@ export default function TimeEntryModal({ entry, projects, tasks, defaultDate, on
   );
   const [form, setForm] = useState({
     date: entry.date || defaultDate || new Date().toISOString().slice(0, 10),
-    project_id: entry.project_id ?? "",
+    project_id: entry.project_id ?? null,
     task_id: entry.task_id ?? "",
     description: entry.description || "",
     start_time: entry.start_time || "",
@@ -38,7 +124,6 @@ export default function TimeEntryModal({ entry, projects, tasks, defaultDate, on
     setForm((f) => ({ ...f, [field]: value }));
   }
 
-  // Compute duration_minutes based on current mode
   function computeDuration() {
     if (mode === RANGE_MODE) {
       if (!form.start_time || !form.end_time) return null;
@@ -69,7 +154,7 @@ export default function TimeEntryModal({ entry, projects, tasks, defaultDate, on
 
     const payload = {
       date: form.date,
-      project_id: form.project_id ? Number(form.project_id) : null,
+      project_id: form.project_id ?? null,
       task_id: form.task_id ? Number(form.task_id) : null,
       description: form.description,
       start_time: mode === RANGE_MODE ? form.start_time || null : null,
@@ -121,19 +206,14 @@ export default function TimeEntryModal({ entry, projects, tasks, defaultDate, on
               />
             </div>
 
-            {/* Project */}
+            {/* Project — searchable */}
             <div>
               <label className="block text-sm text-gray-400 mb-1">Project</label>
-              <select
+              <ProjectSearch
+                projects={projects}
                 value={form.project_id}
-                onChange={(e) => set("project_id", e.target.value)}
-                className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
-              >
-                <option value="">— No project —</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
+                onChange={(id) => set("project_id", id)}
+              />
             </div>
 
             {/* Description */}
@@ -230,7 +310,6 @@ export default function TimeEntryModal({ entry, projects, tasks, defaultDate, on
                 </div>
               )}
 
-              {/* Live duration preview */}
               {previewDuration !== null && previewDuration > 0 && (
                 <p className="text-xs text-indigo-400 mt-1.5">
                   = {Math.floor(previewDuration / 60)}h {previewDuration % 60}m
