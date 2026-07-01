@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronLeft, ChevronRight, Download, Plus, Pencil, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Download, Plus, Pencil, Trash2 } from "lucide-react";
 import {
   useTimesheetReport, useTimeEntryMutations, useProjects, useTimeEntries,
 } from "../hooks/useTimesheet.js";
@@ -213,6 +213,8 @@ export default function TimesheetView() {
           report={report}
           year={dateFrom.slice(0, 4)}
           onMonthClick={goToMonth}
+          onEdit={(entry) => setModal(entry)}
+          onDelete={handleDelete}
         />
       ) : (
         <>
@@ -255,8 +257,19 @@ export default function TimesheetView() {
   );
 }
 
-function ProjectSummary({ report }) {
+function ProjectSummary({ report, entries = [], onEdit = null, onDelete = null }) {
+  const [expanded, setExpanded] = useState({ active: false, id: undefined });
+  const isExpandable = entries.length > 0;
   const max = Math.max(...report.by_project.map((p) => p.total_minutes), 1);
+
+  function toggleExpand(projectId) {
+    setExpanded((prev) =>
+      prev.active && prev.id === projectId
+        ? { active: false, id: undefined }
+        : { active: true, id: projectId }
+    );
+  }
+
   return (
     <div className="rounded-xl bg-gray-900 border border-gray-800 p-5">
       <div className="flex items-center justify-between mb-4">
@@ -266,10 +279,28 @@ function ProjectSummary({ report }) {
       <div className="space-y-3">
         {report.by_project.map((proj) => {
           const pct = (proj.total_minutes / max) * 100;
+          const isExpanded = expanded.active && expanded.id === proj.project_id;
+          const projEntries = isExpandable
+            ? entries
+                .filter((e) => (e.project?.id ?? null) === proj.project_id)
+                .sort((a, b) => b.date.localeCompare(a.date))
+            : [];
+
           return (
             <div key={proj.project_id ?? "none"}>
-              <div className="flex items-center justify-between text-sm mb-1.5">
+              <div
+                onClick={() => isExpandable && toggleExpand(proj.project_id)}
+                className={`flex items-center justify-between text-sm mb-1.5 rounded ${
+                  isExpandable ? "cursor-pointer hover:opacity-80 select-none" : ""
+                }`}
+              >
                 <div className="flex items-center gap-2">
+                  {isExpandable && (
+                    <ChevronDown
+                      size={14}
+                      className={`text-gray-500 transition-transform duration-200 ${isExpanded ? "" : "-rotate-90"}`}
+                    />
+                  )}
                   <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: proj.project_color }} />
                   <span className="font-medium">{proj.project_name}</span>
                   <span className="text-gray-600 text-xs">
@@ -284,10 +315,65 @@ function ProjectSummary({ report }) {
                   style={{ width: `${pct}%`, backgroundColor: proj.project_color }}
                 />
               </div>
+              {isExpanded && projEntries.length > 0 && (
+                <div className="mt-2 rounded-lg border border-gray-800 overflow-hidden">
+                  {projEntries.map((entry) => (
+                    <ProjectEntryRow
+                      key={entry.id}
+                      entry={entry}
+                      onEdit={onEdit ? () => onEdit(entry) : null}
+                      onDelete={onDelete ? () => onDelete(entry) : null}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function ProjectEntryRow({ entry, onEdit, onDelete }) {
+  const dateLabel = new Date(entry.date + "T00:00:00").toLocaleDateString(undefined, {
+    weekday: "short", month: "short", day: "numeric",
+  });
+  return (
+    <div className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-800/40 last:border-0 group hover:bg-gray-800/30 transition-colors">
+      <span className="text-xs text-gray-500 w-28 shrink-0">{dateLabel}</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm truncate">
+          {entry.description || <span className="text-gray-600 italic">No description</span>}
+        </p>
+        {entry.task_title && (
+          <span className="text-xs text-indigo-400 truncate">↳ {entry.task_title}</span>
+        )}
+        {entry.start_time && entry.end_time && (
+          <span className="text-xs text-gray-600 ml-2">{entry.start_time}–{entry.end_time}</span>
+        )}
+      </div>
+      <span className="text-sm font-bold tabular-nums text-gray-300 shrink-0">
+        {fmtHours(entry.duration_minutes)}
+      </span>
+      {(onEdit || onDelete) && (
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {onEdit && (
+            <button onClick={onEdit}
+              className="p-1.5 rounded text-gray-500 hover:text-indigo-400 hover:bg-gray-700 transition-colors"
+              title="Edit">
+              <Pencil size={13} />
+            </button>
+          )}
+          {onDelete && (
+            <button onClick={onDelete}
+              className="p-1.5 rounded text-gray-500 hover:text-red-400 hover:bg-gray-700 transition-colors"
+              title="Delete">
+              <Trash2 size={13} />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -328,7 +414,7 @@ function DailyEntries({ entries, dateFrom, dateTo, onEdit, onDelete }) {
   );
 }
 
-function YearView({ entries, report, year, onMonthClick }) {
+function YearView({ entries, report, year, onMonthClick, onEdit, onDelete }) {
   const months = Array.from({ length: 12 }, (_, i) => {
     const monthPrefix = `${year}-${String(i + 1).padStart(2, "0")}`;
     const monthStart  = `${monthPrefix}-01`;
@@ -343,7 +429,9 @@ function YearView({ entries, report, year, onMonthClick }) {
 
   return (
     <div className="space-y-5">
-      {report && report.by_project.length > 0 && <ProjectSummary report={report} />}
+      {report && report.by_project.length > 0 && (
+        <ProjectSummary report={report} entries={entries} onEdit={onEdit} onDelete={onDelete} />
+      )}
 
       {yearTotal === 0 ? (
         <div className="rounded-xl bg-gray-900 border border-gray-800 px-5 py-10 text-center">
